@@ -51,6 +51,8 @@ namespace RandomPlus.Tests
             Verse.StartingPawnUtility.RandomizeInPlaceCount = 0;
             Verse.StartingPawnUtility.RandomizeInPlaceHook = p => p;
             Find.WindowStack.currentlyDrawnWindow = null;
+            Find.WindowStack.Windows.Clear();
+            PawnRandomizer.AbortSearch();
             Verse.PawnGenerator.GearGenerationsSkipped = 0;
             PawnRandomizer.SuppressGearGeneration = false;
             PawnRandomizer.ForeignPatchesOnGenerationEntryPoints = () => false;

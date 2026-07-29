@@ -223,6 +223,95 @@ namespace RandomPlus.Tests
                 $"unsatisfiable filter stops at the reroll limit (used {PawnRandomizer.RandomRerollCounter()}/{filter.RerollLimit})");
         }
 
+        // --------------------------------------------------------- search slicing
+
+        public static void Search_SpansMultiplePumps()
+        {
+            World.Reset();
+            var filter = PawnRandomizer.PawnFilter;
+            filter.RerollLimit = 100;
+            filter.Gender = Gender.Female;
+
+            int rolls = 0;
+            Verse.StartingPawnUtility.RandomizeInPlaceHook = _ =>
+            {
+                rolls++;
+                return SatisfyingPawn(rolls >= 4 ? Gender.Female : Gender.Male, rolls);
+            };
+            Verse.StartingPawnUtility.Pawns.Add(SatisfyingPawn(Gender.Male, 0));
+
+            PawnRandomizer.BeginReroll(0);
+            Assert.True(PawnRandomizer.SearchInProgress, "a begun search reports itself in progress");
+
+            // A zero budget still advances by one candidate per pump, so the search
+            // has to finish, and has to take more than one pump to do it.
+            int pumps = 0;
+            while (PawnRandomizer.SearchInProgress && pumps < 1000)
+            {
+                PawnRandomizer.PumpSearch(0);
+                pumps++;
+            }
+
+            Assert.True(!PawnRandomizer.SearchInProgress, "the sliced search runs to completion");
+            Assert.True(pumps > 1, $"the search spanned multiple pumps ({pumps})");
+            Assert.Equal(Gender.Female, Verse.StartingPawnUtility.Pawns[0].gender,
+                "a search sliced across pumps still satisfies the filter");
+        }
+
+        public static void Search_AbortsWhenOwnerWindowCloses()
+        {
+            World.Reset();
+            var filter = PawnRandomizer.PawnFilter;
+            filter.RerollLimit = 10_000;
+            filter.Gender = Gender.Female;
+
+            // Unsatisfiable, so the search would run for a long time if not aborted.
+            Verse.StartingPawnUtility.RandomizeInPlaceHook = _ => SatisfyingPawn(Gender.Male, 0);
+            Verse.StartingPawnUtility.Pawns.Add(SatisfyingPawn(Gender.Male, 0));
+
+            // The search is started from inside a window, which the stack knows about.
+            var page = new Window();
+            Find.WindowStack.currentlyDrawnWindow = page;
+            Find.WindowStack.Windows.Add(page);
+
+            PawnRandomizer.BeginReroll(0);
+            PawnRandomizer.PumpSearch(0);
+            Assert.True(PawnRandomizer.SearchInProgress, "unsatisfiable search is still running after one pump");
+
+            // The window closes - Back, or Start - mid-search.
+            Find.WindowStack.Windows.Clear();
+            PawnRandomizer.PumpSearch(0);
+
+            Assert.True(!PawnRandomizer.SearchInProgress, "the search stops when its window closes");
+            Assert.Equal(1, Verse.StartingPawnUtility.Pawns[0].GearCount,
+                "the abandoned search leaves a finished pawn, gear generated exactly once");
+        }
+
+        public static void Search_SecondBeginIsIgnored()
+        {
+            World.Reset();
+            var filter = PawnRandomizer.PawnFilter;
+            filter.RerollLimit = 10_000;
+            filter.Gender = Gender.Female;
+
+            Verse.StartingPawnUtility.RandomizeInPlaceHook = _ => SatisfyingPawn(Gender.Male, 0);
+            Verse.StartingPawnUtility.Pawns.Add(SatisfyingPawn(Gender.Male, 0));
+
+            PawnRandomizer.BeginReroll(0);
+            PawnRandomizer.PumpSearch(0);
+            int counted = PawnRandomizer.RandomRerollCounter();
+            Assert.True(counted > 0, "the first search made progress");
+
+            // A second click while a search runs starts nothing and resets nothing.
+            PawnRandomizer.BeginReroll(0);
+            Assert.Equal(counted, PawnRandomizer.RandomRerollCounter(),
+                "a second begin during a search does not reset the reroll counter");
+            Assert.True(PawnRandomizer.SearchInProgress, "the original search is still the active one");
+
+            PawnRandomizer.AbortSearch();
+            Assert.True(!PawnRandomizer.SearchInProgress, "an aborted search is no longer in progress");
+        }
+
         public static void Reroll_FallsBackToWholePawnRerolls()
         {
             World.Reset();

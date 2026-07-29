@@ -34,9 +34,11 @@ namespace RandomPlus
     [HarmonyPatch(typeof(StartingPawnUtility), "RandomizePawn")]
     class Patch_RandomizeMethod
     {
-        // Vanilla wants the starting group to cover its required work types. Rerolling
-        // this pawn can only help so many times before it is another pawn's problem.
-        private const int MaxWorkTypeRetries = 20;
+        // How long one frame may spend searching. A frame is ~16ms at 60fps, so this
+        // costs visible frame rate while a search runs - but the window keeps drawing
+        // and taking input, which is the point. Short searches still finish inside
+        // the click that started them.
+        internal const int SearchBudgetMillis = 25;
 
         [HarmonyPrefix]
         static bool Prefix(int pawnIndex)
@@ -44,19 +46,39 @@ namespace RandomPlus
             if (!TutorSystem.AllowAction((EventPack)nameof(StartingPawnUtility.RandomizePawn)))
                 return false;
 
-            PawnRandomizer.ResetRerollCounter();
+            // One search at a time. A click during a search is dropped, not queued.
+            if (PawnRandomizer.SearchInProgress)
+                return false;
 
-            int num = 0;
-            do
-            {
-                PawnRandomizer.Reroll(pawnIndex);
-                num++;
-            }
-            while (num <= MaxWorkTypeRetries && !StartingPawnUtility.WorkTypeRequirementsSatisfied());
+            PawnRandomizer.BeginReroll(pawnIndex);
+            PawnRandomizer.PumpSearch(SearchBudgetMillis);
 
+            // Vanilla notifies after its single roll. Ours may still be running, but
+            // the tutor event only records that the action was used, which is true
+            // from the moment the search starts.
             TutorSystem.Notify_Event((EventPack)nameof(StartingPawnUtility.RandomizePawn));
 
             return false;
+        }
+    }
+
+    // Advances a search that outlived its click, one time slice per frame, so the
+    // game keeps rendering and taking input while a long search runs. Previously
+    // the whole search ran inside the click's GUI event, and a large reroll limit
+    // froze the window for seconds - a beachball on macOS. The session aborts
+    // itself if the window it was started from closes, so a pawn can never enter
+    // the game half-rerolled.
+    [HarmonyPatch(typeof(WindowStack), "WindowStackOnGUI")]
+    class Patch_PumpRerollSearch
+    {
+        [HarmonyPostfix]
+        static void Postfix()
+        {
+            // OnGUI runs several times per frame - layout, repaint, one call per
+            // input event. Repaint happens exactly once, so gating on it pumps the
+            // search once per frame.
+            if (PawnRandomizer.SearchInProgress && Event.current.type == EventType.Repaint)
+                PawnRandomizer.PumpSearch(Patch_RandomizeMethod.SearchBudgetMillis);
         }
     }
 

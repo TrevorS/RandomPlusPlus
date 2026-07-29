@@ -57,6 +57,12 @@ other mod has patched them. If one has, the same search rerolls whole pawns inst
 apparel, weapons and inventory for candidates — which no filter reads. Neither shortcut changes which
 pawns the search can produce, only what a discarded one costs.
 
+The search runs in ~25 ms time slices, one per frame, instead of to completion inside the click.
+A large reroll limit means seconds of work, and doing it in one GUI event freezes the window — a
+beachball on macOS. Sliced, the game keeps drawing, the reroll counter ticks upward live, and a
+search whose window closes finishes its pawn and stops. Slices fall only between candidates, on the
+same thread, in the same order — so slicing changes when the work happens, never what is generated.
+
 ## Development
 
 | Command | Checks |

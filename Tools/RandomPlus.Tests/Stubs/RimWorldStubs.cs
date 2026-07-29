@@ -346,6 +346,11 @@ namespace Verse
     public class WindowStackStub
     {
         public Window currentlyDrawnWindow;
+
+        // The open-window list the search session watches its owner in. Left empty
+        // by default, which the session reads as "no window to track" - so tests
+        // that do not care about windows are unaffected.
+        public readonly List<Window> Windows = new List<Window>();
     }
 }
 
