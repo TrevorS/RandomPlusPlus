@@ -1,20 +1,53 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ModMetaData>
-	<packageId>mastertea.RandomPlus</packageId>
-	<name>RandomPlus</name>
-	<author>mastertea</author>
-	<url>https://github.com/mastertea/RandomPlus</url>
+	<!--
+	A fork of mastertea's RandomPlus. The identity fields below must stay distinct
+	from the original: two mods sharing a packageId collide in RimWorld's mod list
+	and in dependency resolution, and both replace the same randomize button, so
+	they cannot run together.
+	-->
+	<packageId>trevors.randomplusplus</packageId>
+	<name>RandomPlusPlus</name>
+	<shortName>RandomPlus++</shortName>
+	<author>TrevorS, mastertea</author>
+	<modVersion>1.0.0</modVersion>
+	<url>https://github.com/TrevorS/RandomPlusPlus</url>
+	<!--
+	Every version listed here is built from this source and gets the fixes below.
+	Tools/package.sh fails the release if one of them has no assembly in the zip.
+	1.4 and earlier are deliberately absent: the reroll search is built on
+	generation entry points those versions do not have.
+	-->
 	<supportedVersions>
 		<li>1.6</li>
 		<li>1.5</li>
-		<li>1.4</li>
-		<li>1.3</li>
-		<li>1.2</li>
 	</supportedVersions>
 	<description>
-Allow users to set minimum specifications for pawn generation when using the randomize button. It will keep rerolling until the minimum specification is met or it passes the max reroll limit.
+RandomPlusPlus is a fork of RandomPlus, with the reroll search rewritten and several filter bugs fixed.
 
-Updated for RimWorld 1.6 with improved compatibility and performance.
+Set a specification for your starting colonists, then hit randomize. RandomPlus keeps rerolling until a pawn matches it, or until it reaches your reroll limit.
+
+Filter on skill levels and passions, total skill points, traits (required, excluded, or "any N of these"), age, gender, health conditions and work capability.
+
+
+WHY THIS FORK EXISTS
+
+The original RandomPlus by mastertea still works, and this fork owes it everything. It has not been updated since June 2025, though, and the following were all sitting in it unfixed:
+
+- A gender filter could never be satisfied on the fast reroll setting. Rolling for one would spend the entire reroll limit and then hand back a pawn of the wrong gender anyway.
+- The pawn you kept wore apparel and carried a weapon rolled for the previous candidate rather than for itself.
+- "Count only highest attack skill" read the wrong two skills as soon as any other mod added a skill of its own.
+- Asking for more traits from the pool than you had put in it produced a filter no pawn could ever satisfy, which quietly consumed the whole reroll limit on every randomize.
+- If your saved filter file could not be read, it was deleted. It is now moved aside so the presets can be recovered.
+
+Beyond those, the search itself was rewritten: a rejected pawn now regenerates only the parts a filter actually reads instead of a whole pawn, and the mod asks Harmony which other mods have patched pawn generation rather than checking for one by name, so it takes the safe path automatically when it needs to.
+
+Supports RimWorld 1.6 and 1.5, both built from the same source, so the fixes above apply to both. If you are on 1.4 or earlier, use the original mod instead.
+
+Original mod: https://steamcommunity.com/sharedfiles/filedetails/?id=1434137894
+Source code: https://github.com/TrevorS/RandomPlusPlus
+
+Do not run this alongside the original RandomPlus. Both replace the same randomize button, and the two are declared incompatible.
 	</description>
 	<modDependencies>
 		<li>
@@ -27,4 +60,7 @@ Updated for RimWorld 1.6 with improved compatibility and performance.
 	<loadAfter>
 		<li>brrainz.harmony</li>
 	</loadAfter>
+	<incompatibleWith>
+		<li>mastertea.RandomPlus</li>
+	</incompatibleWith>
 </ModMetaData>
