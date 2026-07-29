@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="256" height="256">
+  <mask id="back">
+    <rect width="32" height="32" fill="#fff"/>
+    <rect x="-2" y="9.5" width="25" height="25" rx="7.5" fill="#000"/>
+    <circle cx="22.75" cy="9.25" r="1.6" fill="#000"/>
+    <circle cx="22.75" cy="4.5" r="1.6" fill="#000"/>
+    <circle cx="22.75" cy="14" r="1.6" fill="#000"/>
+    <circle cx="18" cy="9.25" r="1.6" fill="#000"/>
+    <circle cx="27.5" cy="9.25" r="1.6" fill="#000"/>
+  </mask>
+  <mask id="front">
+    <rect width="32" height="32" fill="#fff"/>
+    <circle cx="10.25" cy="21.75" r="1.7" fill="#000"/>
+    <circle cx="10.25" cy="16.75" r="1.7" fill="#000"/>
+    <circle cx="10.25" cy="26.75" r="1.7" fill="#000"/>
+    <circle cx="5.25" cy="21.75" r="1.7" fill="#000"/>
+    <circle cx="15.25" cy="21.75" r="1.7" fill="#000"/>
+  </mask>
+  <rect x="14" y="0.5" width="17.5" height="17.5" rx="4.5" fill="#C8A05A" mask="url(#back)"/>
+  <rect x="0.5" y="12" width="19.5" height="19.5" rx="5" fill="#E5DDD0" mask="url(#front)"/>
+</svg>
