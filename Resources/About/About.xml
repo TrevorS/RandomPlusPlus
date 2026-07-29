@@ -8,7 +8,6 @@
 	-->
 	<packageId>trevors.randomplusplus</packageId>
 	<name>RandomPlusPlus</name>
-	<shortName>RandomPlus++</shortName>
 	<author>TrevorS, mastertea</author>
 	<modVersion>1.0.0</modVersion>
 	<url>https://github.com/TrevorS/RandomPlusPlus</url>
@@ -25,7 +24,7 @@
 	<description>
 RandomPlusPlus is a fork of RandomPlus, with the reroll search rewritten and several filter bugs fixed.
 
-Set a specification for your starting colonists, then hit randomize. RandomPlus keeps rerolling until a pawn matches it, or until it reaches your reroll limit.
+Set a specification for your starting colonists, then hit randomize. It keeps rerolling until a pawn matches, or until it reaches your reroll limit.
 
 Filter on skill levels and passions, total skill points, traits (required, excluded, or "any N of these"), age, gender, health conditions and work capability.
 
