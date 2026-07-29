@@ -1,0 +1,45 @@
+name: Release
+
+# Fires only when a version tag is pushed, e.g.
+#   git tag v1.6.0 && git push origin v1.6.0
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+jobs:
+  # Every check a push gets, plus the tag-versus-About.xml comparison. Nothing
+  # is published unless this passes, and the zip it uploads is the zip that
+  # ships - the release job does not rebuild.
+  checks:
+    uses: ./.github/workflows/build.yml
+    with:
+      tag: ${{ github.ref_name }}
+
+  release:
+    needs: checks
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          name: RandomPlusPlus-mod
+          path: dist
+
+      - name: Create release
+        # The gh CLI is preinstalled on the runner, which keeps the release path
+        # free of third-party actions.
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          ls -l dist
+          gh release create "${GITHUB_REF_NAME}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --title "${GITHUB_REF_NAME}" \
+            --generate-notes \
+            dist/*.zip

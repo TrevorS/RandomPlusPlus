@@ -1,0 +1,21 @@
+version: 2
+
+updates:
+  # Krafs.Rimworld.Ref tracks RimWorld releases, so a bump here is the first
+  # signal that a game update landed - and the verifier will say whether it
+  # moved anything the mod resolves by name.
+  - package-ecosystem: nuget
+    directories:
+      - /
+      - /Tools/RandomPlus.Verify
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ['*']

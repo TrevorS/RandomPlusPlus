@@ -1,0 +1,164 @@
+name: Build
+
+on:
+  # A branch with a pull request open is covered by the pull_request trigger.
+  # Listing every branch here as well ran the whole suite twice per push.
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+  # The release calls this rather than repeating it, so a tag is gated on
+  # exactly the checks a push is gated on.
+  workflow_call:
+    inputs:
+      tag:
+        description: Release tag to check the packaged version against.
+        type: string
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+# A push that supersedes an in-flight run makes that run's result irrelevant.
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Formatting and shellcheck give the same answer on every platform, so they
+  # run once rather than once per OS.
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Check formatting
+        # Whitespace only, which is provably behaviour-preserving: the compiled IL was
+        # byte-identical across all 334 methods before and after the initial pass.
+        run: |
+          dotnet format whitespace RandomPlus.csproj --verify-no-changes
+          for p in Tools/RandomPlus.Verify Tools/RandomPlus.Tests Tools/RandomPlus.Bench; do
+            dotnet format whitespace "$p" --verify-no-changes
+          done
+
+      - name: Lint the shell scripts
+        # The release runs these and nothing else stands between a tag and a
+        # published zip, so they get checked like the rest of the source.
+        run: shellcheck Tools/*.sh
+
+  build:
+    # macOS is in the matrix because that is where the mod is tested, and
+    # because its tooling differs in ways Linux cannot surface: a BSD userland
+    # rather than GNU, and bash 3.2 as the system shell. Three real breakages
+    # have already come out of that gap.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Show the toolchain
+        run: |
+          make --version | head -1
+          echo "bash on PATH: $(bash --version | head -1)"
+          echo "/bin/bash:     $(/bin/bash --version | head -1)"
+
+      - name: Build and verify every supported RimWorld version
+        # No RimWorld installation on the runner - each build falls back to that
+        # version's Krafs.Rimworld.Ref reference assemblies. The project treats
+        # warnings as errors, and every analyser rule not excepted in
+        # .editorconfig is on.
+        #
+        # Verify runs per version because that is the whole point: Harmony patch
+        # targets and string-based reflection resolve at runtime and fail quietly
+        # when a game version moves them, so each build is checked against the
+        # metadata it actually compiled against.
+        #
+        # Driven through make so the Makefile is covered as well: it is a
+        # supported entry point now, and macOS ships GNU make 3.81.
+        run: make build
+
+      - name: Test filter and reroll logic
+        # Compiles the real filter and reroll sources against stubs standing in for
+        # the RimWorld types, so the decisions they make can be asserted directly.
+        run: make test
+
+      - name: Benchmarks
+        # A smoke run at reduced iterations. Timings from a shared CI runner are not
+        # worth gating on; this only proves the benchmarks still build and run.
+        run: dotnet run --project Tools/RandomPlus.Bench -c Release -- 0.05
+
+      - name: Package
+        # The same script the release runs, so a packaging mistake surfaces on
+        # the push that caused it rather than on the tag. Its checks cover the
+        # Harmony assembly, the per-version folders and stray build output.
+        #
+        # On both platforms deliberately: this reads the icon's PNG header with
+        # od, and the GNU-only spelling of that failed outright on macOS.
+        run: ./Tools/package.sh "${{ inputs.tag }}"
+
+      - name: Install into a RimWorld tree, then remove it
+        # install.sh has to find the Mods folder in each platform's layout. On
+        # macOS that is inside RimWorldMac.app and the path contains spaces.
+        # Nothing else exercises either.
+        run: |
+          set -euo pipefail
+          if [ "$RUNNER_OS" = "macOS" ]; then
+            root="$HOME/Library/Application Support/Steam/steamapps/common/RimWorld"
+            mods="$root/RimWorldMac.app/Mods"
+          else
+            root="$HOME/.steam/steam/steamapps/common/RimWorld"
+            mods="$root/Mods"
+          fi
+          mkdir -p "$mods"
+
+          RIMWORLD_DIR="$root" ./Tools/install.sh
+          test -f "$mods/RandomPlusPlus/About/About.xml"
+          test -f "$mods/RandomPlusPlus/About/ModIcon.png"
+          test -f "$mods/RandomPlusPlus/1.6/Assemblies/RandomPlus.dll"
+          test -f "$mods/RandomPlusPlus/1.5/Assemblies/RandomPlus.dll"
+
+          RIMWORLD_DIR="$root" ./Tools/install.sh --uninstall
+          test ! -d "$mods/RandomPlusPlus"
+          echo "install and uninstall both clean"
+
+      - name: Re-run under the bash macOS actually ships
+        if: runner.os == 'macOS'
+        # The runner puts a newer bash ahead of /bin/bash on PATH, so the steps
+        # above do not exercise the 3.2 that a Mac without Homebrew would use.
+        # Expanding an empty array under `set -u`, and `readonly` on an array,
+        # both behave differently there, and both have already bitten.
+        #
+        # install.sh is included because its RimWorld-detection builds and
+        # expands a local array, which is the exact construct that breaks. The
+        # tree from the previous step is still there, and no RIMWORLD_DIR is set
+        # here on purpose, so this also covers the auto-detection path.
+        run: |
+          /bin/bash --version | head -1
+          /bin/bash Tools/build.sh 1.6
+          /bin/bash Tools/package.sh
+          /bin/bash Tools/install.sh
+          /bin/bash Tools/install.sh --uninstall
+
+      # One upload only: the release downloads this by name, and two matrix jobs
+      # publishing the same artifact would race.
+      - uses: actions/upload-artifact@v7
+        if: runner.os == 'Linux'
+        with:
+          name: RandomPlusPlus-mod
+          path: dist/*.zip
+          if-no-files-found: error
