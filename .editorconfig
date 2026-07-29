@@ -1,0 +1,90 @@
+root = true
+
+# Formatting conventions, so editors agree on what this code looks like.
+#
+# These are NOT enforced by the build or by CI. Roughly half of Source/ is UI code
+# forked from EdBPrepareCarefully, and reformatting it wholesale would destroy the
+# ability to diff against upstream for very little in return. Run `dotnet format`
+# on a file you are already rewriting, not across the tree.
+
+[*]
+end_of_line = lf
+insert_final_newline = true
+charset = utf-8
+trim_trailing_whitespace = true
+
+[*.{yml,yaml,json,xml}]
+indent_style = space
+indent_size = 2
+
+[*.cs]
+indent_style = space
+indent_size = 4
+csharp_new_line_before_open_brace = all
+csharp_new_line_before_else = true
+csharp_new_line_before_catch = true
+csharp_new_line_before_finally = true
+csharp_prefer_braces = true:suggestion
+dotnet_sort_system_directives_first = false
+csharp_style_var_when_type_is_apparent = true:suggestion
+
+# ----------------------------------------------------------------------------------
+# Analyser policy
+#
+# RandomPlus.csproj runs the .NET analysers with AnalysisMode=All and treats every
+# warning as an error. The rules below are the exceptions, and each one is off
+# because it is wrong for a RimWorld mod rather than because the code did not
+# comply. Anything not listed here is on, so new rules arrive switched on.
+#
+# Measured before choosing: at AnalysisMode=All this codebase reported roughly 480
+# diagnostics, of which about 280 were the first two rules alone.
+# ----------------------------------------------------------------------------------
+
+[Source/**.cs]
+
+# A mod's state is process-wide. The reroll counter and filter list are read
+# directly by the UI, which is how the rest of the codebase is written.
+dotnet_diagnostic.CA2211.severity = none
+
+# Scribe_Values.Look takes its target by ref, so saved settings have to be fields,
+# and RimWorld's own Def types are public fields throughout.
+dotnet_diagnostic.CA1051.severity = none
+
+# An exception escaping into RimWorld's UI loop takes the game with it. Catching
+# broadly and logging is the correct behaviour at these boundaries, not a smell.
+dotnet_diagnostic.CA1031.severity = none
+
+# Internal mod code, not a published API surface with untrusted callers.
+dotnet_diagnostic.CA1062.severity = none
+
+# Skills and Traits deliberately expose their lists: they are read for every
+# candidate pawn, and an interface or iterator allocates on each call.
+dotnet_diagnostic.CA1002.severity = none
+
+# Harmony and RimWorld discover these classes by attribute and never construct them.
+dotnet_diagnostic.CA1812.severity = none
+
+# Harmony's transpiler contract is IEnumerable<CodeInstruction>.
+dotnet_diagnostic.CA1859.severity = none
+
+# The enums below are persisted by Scribe; changing their underlying type or adding
+# a zero member would change the saved format for no benefit.
+dotnet_diagnostic.CA1028.severity = none
+dotnet_diagnostic.CA1008.severity = none
+
+# RimWorld renders through its own localisation; UI numbers should follow the
+# player's locale, which is what the current-culture default already does.
+dotnet_diagnostic.CA1305.severity = none
+
+# Style only, and mostly in the forked UI code where churn costs more than it gains.
+dotnet_diagnostic.CA1805.severity = none
+dotnet_diagnostic.CA1822.severity = none
+dotnet_diagnostic.CA1825.severity = none
+dotnet_diagnostic.CA1852.severity = none
+dotnet_diagnostic.CA1707.severity = none
+dotnet_diagnostic.CA1708.severity = none
+
+# The tools are developer utilities, not shipped code. They build warning-free but
+# are not held to the shipped assembly's analyser policy.
+[Tools/**.cs]
+dotnet_analyzer_diagnostic.severity = suggestion

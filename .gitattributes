@@ -1,17 +1,12 @@
 # Auto detect text files and perform LF normalization
 * text=auto
 
+# This repository ships build output and image assets. Mark them binary
+# explicitly so line-ending normalization can never corrupt a released
+# assembly or texture.
+*.dll    binary
+*.pdb    binary
+*.png    binary
+
 # Custom for Visual Studio
 *.cs     diff=csharp
-
-# Standard to msysgit
-*.doc	 diff=astextplain
-*.DOC	 diff=astextplain
-*.docx diff=astextplain
-*.DOCX diff=astextplain
-*.dot  diff=astextplain
-*.DOT  diff=astextplain
-*.pdf  diff=astextplain
-*.PDF	 diff=astextplain
-*.rtf	 diff=astextplain
-*.RTF	 diff=astextplain

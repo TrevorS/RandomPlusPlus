@@ -1,0 +1,18 @@
+<Project>
+
+  <!--
+  The mod is built once per supported RimWorld version, against that version's
+  reference assemblies. Each of those builds needs its own intermediate directory:
+  sharing one would mean sharing a single NuGet assets file, and the second build
+  would quietly compile against the first one's references.
+
+  BaseIntermediateOutputPath has to be set before the SDK's props are imported,
+  which is the only reason this file exists. Scoped to the mod project so the
+  tools under Tools/ keep their ordinary obj/ layout.
+  -->
+  <PropertyGroup Condition="'$(MSBuildProjectName)' == 'RandomPlus'">
+    <RimWorldVersion Condition="'$(RimWorldVersion)' == ''">1.6</RimWorldVersion>
+    <BaseIntermediateOutputPath>obj/$(RimWorldVersion)/</BaseIntermediateOutputPath>
+  </PropertyGroup>
+
+</Project>
