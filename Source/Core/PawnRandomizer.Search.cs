@@ -50,6 +50,16 @@ namespace RandomPlus
         /// <summary>Whether a reroll search is currently running.</summary>
         public static bool SearchInProgress => activeSearch != null;
 
+        /// <summary>Which starting pawn the active search is rerolling, or -1. The UI
+        /// uses this to draw a search panel over that pawn's card instead of the
+        /// half-rerolled pawn itself.</summary>
+        public static int SearchingPawnIndex => activeSearch?.PawnIndex ?? -1;
+
+        /// <summary>The pawn the active search is currently rerolling, if any. Between
+        /// frames it sits at a candidate boundary, so its name and age are the latest
+        /// candidate's - readable, though not a finished pawn.</summary>
+        public static Pawn SearchingPawn => activeSearch?.CurrentPawn;
+
         /// <summary>
         /// Starts a search for the starting pawn at <paramref name="pawnIndex"/>. One
         /// search runs at a time; starting another while one is active does nothing.
@@ -227,6 +237,9 @@ namespace RandomPlus
             private readonly bool trackOwner;
 
             private bool done;
+
+            internal int PawnIndex => pawnIndex;
+            internal Pawn CurrentPawn => pawn;
 
             // Search state, shared between the iterator and the candidate attempts.
             private Pawn pawn;

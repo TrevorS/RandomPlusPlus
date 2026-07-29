@@ -59,9 +59,13 @@ pawns the search can produce, only what a discarded one costs.
 
 The search runs in ~25 ms time slices, one per frame, instead of to completion inside the click.
 A large reroll limit means seconds of work, and doing it in one GUI event freezes the window — a
-beachball on macOS. Sliced, the game keeps drawing, the reroll counter ticks upward live, and a
-search whose window closes finishes its pawn and stops. Slices fall only between candidates, on the
-same thread, in the same order — so slicing changes when the work happens, never what is generated.
+beachball on macOS. Sliced, the game keeps drawing, and a search whose window closes finishes its
+pawn and stops. Slices fall only between candidates, on the same thread, in the same order — so
+slicing changes when the work happens, never what is generated.
+
+While it runs, the pawn's card shows a search panel — live reroll count, candidate names sampled at
+a readable pace — rather than the pawn itself, which mid-search is always part-way through a reroll
+and would flicker through half-generated composites.
 
 ## Development
 

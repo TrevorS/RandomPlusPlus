@@ -11,6 +11,9 @@
   
   <RandomPlus.FilterButton>Filter</RandomPlus.FilterButton>
   <RandomPlus.RerollLabel>Rerolls: </RandomPlus.RerollLabel>
+
+  <RandomPlus.SearchOverlay.Title>Searching for a matching pawn...</RandomPlus.SearchOverlay.Title>
+  <RandomPlus.SearchOverlay.Hint>Close this page to stop the search.</RandomPlus.SearchOverlay.Hint>
   
 	<RandomPlus.PanelSkills.Header>Minimum Skill Level</RandomPlus.PanelSkills.Header>
 	<RandomPlus.PanelSkills.PassionSlider>Passion Range: {0} - {1}</RandomPlus.PanelSkills.PassionSlider>

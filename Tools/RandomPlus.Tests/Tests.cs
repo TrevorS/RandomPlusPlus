@@ -242,6 +242,7 @@ namespace RandomPlus.Tests
 
             PawnRandomizer.BeginReroll(0);
             Assert.True(PawnRandomizer.SearchInProgress, "a begun search reports itself in progress");
+            Assert.Equal(0, PawnRandomizer.SearchingPawnIndex, "the search reports which pawn it is rerolling");
 
             // A zero budget still advances by one candidate per pump, so the search
             // has to finish, and has to take more than one pump to do it.
@@ -253,6 +254,7 @@ namespace RandomPlus.Tests
             }
 
             Assert.True(!PawnRandomizer.SearchInProgress, "the sliced search runs to completion");
+            Assert.Equal(-1, PawnRandomizer.SearchingPawnIndex, "no searching pawn is reported once the search is over");
             Assert.True(pumps > 1, $"the search spanned multiple pumps ({pumps})");
             Assert.Equal(Gender.Female, Verse.StartingPawnUtility.Pawns[0].gender,
                 "a search sliced across pumps still satisfies the filter");

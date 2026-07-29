@@ -40,8 +40,8 @@ Start a new colony and stop at **Create characters**.
 | 9 | The kept pawn's **work tab** is populated | Work priorities are initialised only for the kept pawn. |
 | 10 | Ask for something impossible (all skills ≥ 20), Randomize | Spends the reroll limit, returns a fully finished pawn, does not hang or throw. |
 | 11 | **Save** a filter, restart the game, **Load** it | Presets round-trip through `Scribe`. |
-| 12 | Set a rare filter (a 2–3% trait, required) with a big reroll limit, Randomize | The game keeps drawing and the reroll counter ticks up live — no beachball, no frozen window. The search runs in per-frame slices. |
-| 13 | While that search runs: click Randomize again, then close the page mid-search | The second click does nothing. Closing the page stops the search, and the pawn it leaves behind is finished — gear, work tab — not half-rerolled. |
+| 12 | Set a rare filter (a 2–3% trait, required) with a big reroll limit, Randomize | No beachball, no frozen window. The portrait area shows the search panel: a live reroll count and candidate names ticking at a readable pace — not a flickering half-generated pawn. |
+| 13 | While that search runs: click Randomize again, then close the page mid-search | The second click does nothing. Closing the page stops the search, and the pawn it leaves behind is finished — gear, work tab — not half-rerolled. When the search ends normally, the card comes back showing the kept pawn. |
 | 14 | Check the log | No red errors. `[RandomPlusPlus]` warnings are readable and not repeated per reroll. |
 
 ## Migration

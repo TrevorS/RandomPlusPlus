@@ -154,6 +154,11 @@ Updated UI
  which is unchanged - so nothing a player has breaks. Renamed before the first
  release deliberately: renaming after one would let an upgrade-by-overwrite leave
  both dlls in place, loaded twice.
+-While a search runs, the pawn's card shows a search panel - the live reroll
+ count and a rolling sample of candidate names - instead of the pawn itself.
+ Mid-search the pawn is always part-way through a reroll, so drawing it live
+ flickered through half-generated composites at whatever speed candidates
+ failed. Skipping its portrait during the search also costs less.
 -The game no longer freezes while a search runs. The search used to run to
  completion inside the Randomize click, which for a large reroll limit meant
  seconds of frozen window - a beachball on macOS. It now runs in time slices,
