@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <AssemblyName>RandomPlus.Bench</AssemblyName>
+    <RootNamespace>RandomPlus.Bench</RootNamespace>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <Optimize>true</Optimize>
+    <ServerGarbageCollection>false</ServerGarbageCollection>
+    <!-- Microbenchmarks: measure fully optimised code, not tier-0 -->
+    <TieredCompilation>false</TieredCompilation>
+  </PropertyGroup>
+
+  <!-- Same core sources and stubs the tests use -->
+  <ItemGroup>
+    <Compile Include="../../Source/Core/**/*.cs" LinkBase="Core" />
+    <Compile Include="../RandomPlus.Tests/Stubs/RimWorldStubs.cs" Link="Stubs/RimWorldStubs.cs" />
+    <Compile Include="../RandomPlus.Tests/Harness.cs" Link="Harness.cs" />
+    <Compile Include="Program.cs" />
+  </ItemGroup>
+
+</Project>
