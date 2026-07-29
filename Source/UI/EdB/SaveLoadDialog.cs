@@ -37,6 +37,15 @@ namespace RandomPlus
             this.forcePause = true;
 
             SaveLoader.LoadAll();
+
+            // Without this, a preset that failed to load is just missing from the
+            // list, which reads as "my preset is gone" rather than "something broke".
+            if (SaveLoader.LastLoadDropped > 0)
+            {
+                Messages.Message(
+                    "RandomPlus.SaveLoadDialog.SkippedUnreadable".Translate(SaveLoader.LastLoadDropped),
+                    MessageTypeDefOf.RejectInput);
+            }
         }
 
         public override Vector2 InitialSize
@@ -88,7 +97,7 @@ namespace RandomPlus
                     if (Widgets.ButtonText(rect, "", false, true, color))
                     {
                         selectedIndex = i;
-                        Filename = current.name;
+                        Filename = current?.name ?? "";
                     }
 
                     Rect innerRect = new Rect(rect.x + 3, rect.y + 3, rect.width - 6, rect.height - 6);
@@ -100,7 +109,10 @@ namespace RandomPlus
                         Rect rect2 = new Rect(15, 0, rowSize.x, rowSize.y);
                         Text.Anchor = TextAnchor.MiddleLeft;
                         Text.Font = GameFont.Small;
-                        Widgets.Label(rect2, current.name);
+                        // Null-tolerant even though LoadAll scrubs failed entries: one
+                        // null here used to abort the whole draw, leaving a window
+                        // with a list and no buttons, field or footer.
+                        Widgets.Label(rect2, current?.name ?? "");
                         GUI.color = Color.white;
                     }
                     finally
@@ -122,24 +134,28 @@ namespace RandomPlus
             GUI.BeginGroup(buttonAreaRect);
             try
             {
-                if (selectedIndex == -1)
+                // Bounds, not just -1: the selection is an index into this frame's
+                // copy of the list, and acting on it must never read past whatever
+                // the list has shrunk to.
+                bool hasSelection = selectedIndex >= 0 && selectedIndex < list.Count;
+                if (!hasSelection)
                     GUI.enabled = false;
 
                 Rect loadButtonRect = new Rect(0, 0, buttonSize.x, buttonSize.y);
-                if (Widgets.ButtonText(loadButtonRect, "RandomPlus.SaveLoadDialog.LoadButton".Translate(), true, false, true))
+                if (Widgets.ButtonText(loadButtonRect, "RandomPlus.SaveLoadDialog.LoadButton".Translate(), true, false, true) && hasSelection)
                 {
-                    SaveLoader.Load(PawnRandomizer.pawnFilterList[selectedIndex]);
+                    SaveLoader.Load(list[selectedIndex]);
                     Close();
                 }
 
                 Rect deleteButtonRect = loadButtonRect.OffsetBy(new Vector2(0, buttonSize.y + padding));
-                if (Widgets.ButtonText(deleteButtonRect, "RandomPlus.SaveLoadDialog.DeleteButton".Translate(), true, false, true))
+                if (Widgets.ButtonText(deleteButtonRect, "RandomPlus.SaveLoadDialog.DeleteButton".Translate(), true, false, true) && hasSelection)
                 {
-                    SaveLoader.Delete(PawnRandomizer.pawnFilterList[selectedIndex]);
+                    SaveLoader.Delete(list[selectedIndex]);
                     selectedIndex = -1;
                 }
 
-                if (selectedIndex == -1)
+                if (!hasSelection)
                     GUI.enabled = true;
             }
             finally
@@ -164,7 +180,7 @@ namespace RandomPlus
             if (GenText.IsValidFilename(text))
             {
                 Filename = text;
-                var matchingIndex = PawnRandomizer.pawnFilterList.FindIndex(i => i.name == Filename);
+                var matchingIndex = PawnRandomizer.pawnFilterList.FindIndex(i => i?.name == Filename);
                 if (matchingIndex >= 0)
                 {
                     selectedIndex = matchingIndex;

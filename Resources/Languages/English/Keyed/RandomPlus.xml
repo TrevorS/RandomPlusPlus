@@ -8,6 +8,7 @@
   <RandomPlus.SaveLoadDialog.OverwriteButton>Overwrite</RandomPlus.SaveLoadDialog.OverwriteButton>
   <RandomPlus.SaveLoadDialog.LoadButton>Load</RandomPlus.SaveLoadDialog.LoadButton>
   <RandomPlus.SaveLoadDialog.DeleteButton>Delete</RandomPlus.SaveLoadDialog.DeleteButton>
+  <RandomPlus.SaveLoadDialog.SkippedUnreadable>{0} saved filter(s) could not be read and were skipped - see the log for why.</RandomPlus.SaveLoadDialog.SkippedUnreadable>
   
   <RandomPlus.FilterButton>Filter</RandomPlus.FilterButton>
   <RandomPlus.RerollLabel>Rerolls: </RandomPlus.RerollLabel>

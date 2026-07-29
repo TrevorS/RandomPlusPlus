@@ -14,6 +14,8 @@ namespace RandomPlus
     {
         static HarmonyPatches()
         {
+            InstallGuard.WarnIfDuplicateTypesLoaded();
+
             var harmony = new Harmony(GenerationCompatibility.HarmonyId);
             harmony.PatchAll(Assembly.GetExecutingAssembly());
             GenerationCompatibility.Install();
