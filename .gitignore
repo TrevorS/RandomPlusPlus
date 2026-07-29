@@ -12,6 +12,11 @@ $RECYCLE.BIN/
 **/obj
 **/.vs
 
+# Debug builds drop these next to the shipped assembly; only the .dll is released
+Resources/*/Assemblies/*.pdb
+Resources/*/Assemblies/*.deps.json
+Resources/*/Assemblies/*.xml
+
 # Windows Installer files
 *.cab
 *.msi
@@ -46,10 +51,11 @@ Network Trash Folder
 Temporary Items
 .apdisk
 
-Source/BetterAnimalsTab/obj/Debug/BetterAnimalsTab.pdb
 *.cache
 *.pxd
 
 # EditPlus backup files
 *.bak
 
+dist/
+assets/icon-review.png

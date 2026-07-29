@@ -1,46 +1,63 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <!-- 
-  This file provides universal RimWorld path detection for cross-platform development.
-  
-  Developers can override by setting RIMWORLD_DIR environment variable:
+  <!--
+  Locates a local RimWorld installation so the mod can be compiled against the
+  real game assemblies.
+
+  This is optional. If no installation is found, RandomPlus.csproj falls back to
+  the Krafs.Rimworld.Ref NuGet package, which provides redistributable reference
+  assemblies. That fallback is what lets the project build on a clean machine
+  (Linux CI included) without the game present.
+
+  Developers can override detection by setting the RIMWORLD_DIR environment variable:
   - Windows: set RIMWORLD_DIR=C:\Program Files (x86)\Steam\steamapps\common\RimWorld
-  - Linux: export RIMWORLD_DIR=/home/user/.steam/steam/steamapps/common/RimWorld
-  - macOS: export RIMWORLD_DIR="$HOME/Library/Application Support/Steam/steamapps/common/RimWorld"
+  - Linux:   export RIMWORLD_DIR=/home/user/.steam/steam/steamapps/common/RimWorld
+  - macOS:   export RIMWORLD_DIR="$HOME/Library/Application Support/Steam/steamapps/common/RimWorld"
   -->
-  
+
   <PropertyGroup>
-    <!-- Use environment variable if set -->
+    <!-- Explicit override always wins -->
     <RimWorldDir Condition="'$(RIMWORLD_DIR)' != ''">$(RIMWORLD_DIR)</RimWorldDir>
-    
-    <!-- Auto-detect common installation paths -->
+
     <!-- Windows Steam paths -->
     <RimWorldDir Condition="'$(OS)' == 'Windows_NT' And '$(RimWorldDir)' == '' And Exists('$(ProgramFiles)\Steam\steamapps\common\RimWorld')">$(ProgramFiles)\Steam\steamapps\common\RimWorld</RimWorldDir>
     <RimWorldDir Condition="'$(OS)' == 'Windows_NT' And '$(RimWorldDir)' == '' And Exists('$(ProgramW6432)\Steam\steamapps\common\RimWorld')">$(ProgramW6432)\Steam\steamapps\common\RimWorld</RimWorldDir>
     <RimWorldDir Condition="'$(OS)' == 'Windows_NT' And '$(RimWorldDir)' == '' And Exists('C:\Program Files (x86)\Steam\steamapps\common\RimWorld')">C:\Program Files (x86)\Steam\steamapps\common\RimWorld</RimWorldDir>
-    
-    <!-- Linux paths (including Proton/Steam Play) -->
+
+    <!-- Linux paths (native and Proton/Steam Play) -->
     <RimWorldDir Condition="'$(RimWorldDir)' == '' And Exists('$(HOME)/.steam/steam/steamapps/common/RimWorld')">$(HOME)/.steam/steam/steamapps/common/RimWorld</RimWorldDir>
     <RimWorldDir Condition="'$(RimWorldDir)' == '' And Exists('$(HOME)/.local/share/Steam/steamapps/common/RimWorld')">$(HOME)/.local/share/Steam/steamapps/common/RimWorld</RimWorldDir>
     <RimWorldDir Condition="'$(RimWorldDir)' == '' And Exists('/usr/share/steam/steamapps/common/RimWorld')">/usr/share/steam/steamapps/common/RimWorld</RimWorldDir>
-    
+
     <!-- macOS paths -->
     <RimWorldDir Condition="'$(RimWorldDir)' == '' And Exists('$(HOME)/Library/Application Support/Steam/steamapps/common/RimWorld')">$(HOME)/Library/Application Support/Steam/steamapps/common/RimWorld</RimWorldDir>
-    
+
     <!-- GOG installations -->
     <RimWorldDir Condition="'$(OS)' == 'Windows_NT' And '$(RimWorldDir)' == '' And Exists('$(ProgramFiles)\GOG Galaxy\Games\RimWorld')">$(ProgramFiles)\GOG Galaxy\Games\RimWorld</RimWorldDir>
     <RimWorldDir Condition="'$(OS)' == 'Windows_NT' And '$(RimWorldDir)' == '' And Exists('$(ProgramW6432)\GOG Galaxy\Games\RimWorld')">$(ProgramW6432)\GOG Galaxy\Games\RimWorld</RimWorldDir>
-    
-    <!-- Set Managed directory -->
-    <RimWorldManaged Condition="'$(RimWorldDir)' != ''">$(RimWorldDir)/RimWorldWin64_Data/Managed</RimWorldManaged>
-    
-    <!-- Warning if RimWorld not found -->
-    <RimWorldNotFound Condition="'$(RimWorldDir)' == '' Or !Exists('$(RimWorldManaged)/Assembly-CSharp.dll')">true</RimWorldNotFound>
   </PropertyGroup>
-  
-  <!-- Warning message for missing RimWorld -->
-  <Target Name="CheckRimWorldInstallation" BeforeTargets="BeforeBuild">
-    <Warning Condition="'$(RimWorldNotFound)' == 'true'" 
-             Text="RimWorld installation not found! Set RIMWORLD_DIR environment variable to your RimWorld installation path. Example: export RIMWORLD_DIR='/home/user/.steam/steam/steamapps/common/RimWorld'" />
+
+  <!--
+  Resolve the Managed directory. The data folder name depends on which build of
+  the game is installed, not on the OS we compile from - a Linux dev running the
+  game through Proton has the Win64 layout.
+  -->
+  <PropertyGroup Condition="'$(RimWorldDir)' != ''">
+    <RimWorldManaged Condition="'$(RimWorldManaged)' == '' And Exists('$(RimWorldDir)/RimWorldWin64_Data/Managed/Assembly-CSharp.dll')">$(RimWorldDir)/RimWorldWin64_Data/Managed</RimWorldManaged>
+    <RimWorldManaged Condition="'$(RimWorldManaged)' == '' And Exists('$(RimWorldDir)/RimWorldLinux_Data/Managed/Assembly-CSharp.dll')">$(RimWorldDir)/RimWorldLinux_Data/Managed</RimWorldManaged>
+    <RimWorldManaged Condition="'$(RimWorldManaged)' == '' And Exists('$(RimWorldDir)/RimWorldMac.app/Contents/Resources/Data/Managed/Assembly-CSharp.dll')">$(RimWorldDir)/RimWorldMac.app/Contents/Resources/Data/Managed</RimWorldManaged>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- True only when we found a real Assembly-CSharp.dll to compile against -->
+    <UseLocalRimWorld Condition="'$(RimWorldManaged)' != ''">true</UseLocalRimWorld>
+    <UseLocalRimWorld Condition="'$(UseLocalRimWorld)' == ''">false</UseLocalRimWorld>
+  </PropertyGroup>
+
+  <Target Name="ReportRimWorldSource" BeforeTargets="BeforeBuild">
+    <Message Importance="high" Condition="'$(UseLocalRimWorld)' == 'true'"
+             Text="RandomPlus: compiling against local RimWorld install at $(RimWorldManaged)" />
+    <Message Importance="high" Condition="'$(UseLocalRimWorld)' != 'true'"
+             Text="RandomPlus: no local RimWorld install found - compiling against Krafs.Rimworld.Ref $(RimWorldRefVersion) reference assemblies. Set RIMWORLD_DIR to build against the game instead." />
   </Target>
 </Project>
