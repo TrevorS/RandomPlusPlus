@@ -14,7 +14,7 @@ using System.Xml.Linq;
 // turns that class of breakage, which is what usually kills a mod across a RimWorld
 // update, into a build failure.
 //
-// Usage: RandomPlus.Verify <references.txt> <RandomPlus.dll>
+// Usage: RandomPlus.Verify <references.txt> <RandomPlusPlus.dll>
 //   references.txt is written by the RandomPlus build (see WriteReferenceManifest),
 //   and lists the assemblies the mod was compiled against.
 //
@@ -28,7 +28,7 @@ const BindingFlags ALL = BindingFlags.Public | BindingFlags.NonPublic
                        | BindingFlags.Static | BindingFlags.Instance;
 
 string manifestPath = args.Length > 0 ? args[0] : "obj/references.txt";
-string modPath = args.Length > 1 ? args[1] : "Resources/1.6/Assemblies/RandomPlus.dll";
+string modPath = args.Length > 1 ? args[1] : "Resources/1.6/Assemblies/RandomPlusPlus.dll";
 
 if (!File.Exists(manifestPath))
 {

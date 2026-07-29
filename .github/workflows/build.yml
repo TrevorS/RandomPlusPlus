@@ -129,8 +129,8 @@ jobs:
           RIMWORLD_DIR="$root" ./Tools/install.sh
           test -f "$mods/RandomPlusPlus/About/About.xml"
           test -f "$mods/RandomPlusPlus/About/ModIcon.png"
-          test -f "$mods/RandomPlusPlus/1.6/Assemblies/RandomPlus.dll"
-          test -f "$mods/RandomPlusPlus/1.5/Assemblies/RandomPlus.dll"
+          test -f "$mods/RandomPlusPlus/1.6/Assemblies/RandomPlusPlus.dll"
+          test -f "$mods/RandomPlusPlus/1.5/Assemblies/RandomPlusPlus.dll"
 
           RIMWORLD_DIR="$root" ./Tools/install.sh --uninstall
           test ! -d "$mods/RandomPlusPlus"

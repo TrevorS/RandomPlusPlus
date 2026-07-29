@@ -79,6 +79,12 @@ fi
 ! compgen -G "$OUT/$MOD_DIR/*/Assemblies/0Harmony.dll" > /dev/null ||
   fail "0Harmony.dll is in the package; it would conflict with the Harmony mod"
 
+# The assembly was renamed to RandomPlusPlus.dll before the first release. RimWorld
+# loads every dll in an Assemblies folder, so a stale RandomPlus.dll would be loaded
+# IN ADDITION - every type and Harmony patch twice. Fatal, not cosmetic.
+! compgen -G "$OUT/$MOD_DIR/*/Assemblies/RandomPlus.dll" > /dev/null ||
+  fail "an old RandomPlus.dll is in the package; the game would load it alongside RandomPlusPlus.dll"
+
 # RimWorld loads the version folder matching the running game, so every version
 # About.xml claims needs one that actually made it into the zip.
 while read -r v; do

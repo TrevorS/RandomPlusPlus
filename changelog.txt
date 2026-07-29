@@ -149,6 +149,11 @@ Updated UI
  the bash 3.2 that macOS ships is covered rather than assumed.
 -The mod is named RandomPlusPlus everywhere. The mod list was showing a separate
  short name, RandomPlus++, which read as a third spelling.
+-The assembly is RandomPlusPlus.dll now, matching the mod's name. RimWorld loads
+ assemblies by folder, not by name, and saved presets resolve types by namespace,
+ which is unchanged - so nothing a player has breaks. Renamed before the first
+ release deliberately: renaming after one would let an upgrade-by-overwrite leave
+ both dlls in place, loaded twice.
 -The game no longer freezes while a search runs. The search used to run to
  completion inside the Randomize click, which for a large reroll limit meant
  seconds of frozen window - a beachball on macOS. It now runs in time slices,

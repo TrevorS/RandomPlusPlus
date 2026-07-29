@@ -30,8 +30,11 @@ else
   versions=("${VERSIONS[@]}")
 fi
 
+# Build everything first, verify everything second: the verifier also checks
+# that every version About.xml claims has an assembly on disk, which can only
+# hold once all the builds have run.
 for v in "${versions[@]}"; do
-  echo "==> RimWorld $v"
+  echo "==> RimWorld $v: build"
   dotnet build -c "$CONFIG" -p:RimWorldVersion="$v"
 
   # Guards against a build silently picking up another version's restore: the
@@ -48,7 +51,10 @@ for v in "${versions[@]}"; do
     echo "    note: built against the local RimWorld install, not $v reference assemblies."
     echo "    note: unset RIMWORLD_DIR to check every version properly."
   fi
+done
 
+for v in "${versions[@]}"; do
+  echo "==> RimWorld $v: verify"
   dotnet run --project Tools/RandomPlus.Verify -c Release -- \
-    "$manifest" "Resources/$v/Assemblies/RandomPlus.dll"
+    "obj/$v/references.txt" "Resources/$v/Assemblies/RandomPlusPlus.dll"
 done
