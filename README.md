@@ -11,6 +11,7 @@ Filter on skill levels and passions, total skill points, traits (required, exclu
 these"), age, gender, health conditions and work capability.
 
 RimWorld 1.6 and 1.5 &middot;
+[Steam Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=3774235680) &middot;
 requires [Harmony](https://github.com/pardeike/HarmonyRimWorld) &middot;
 a fork of [mastertea/RandomPlus](https://github.com/mastertea/RandomPlus)
 
