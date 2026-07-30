@@ -130,7 +130,10 @@ namespace RandomPlus
                 Text.Font = GameFont.Small;
             }
 
-            Rect buttonAreaRect = new Rect(listViewRect.x + listViewRect.width + padding + scrollBarWidth, 0, buttonSize.x, outRect.height);
+            // Start below the window's X: doCloseX draws it in the top-right corner,
+            // over the first rows of this column, and a click there landed on Load.
+            int buttonAreaTop = 36;
+            Rect buttonAreaRect = new Rect(listViewRect.x + listViewRect.width + padding + scrollBarWidth, buttonAreaTop, buttonSize.x, outRect.height - buttonAreaTop);
             GUI.BeginGroup(buttonAreaRect);
             try
             {
