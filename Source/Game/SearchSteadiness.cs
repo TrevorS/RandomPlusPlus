@@ -86,10 +86,17 @@ namespace RandomPlus
             SampledTitleShortCap = pawn.story?.TitleShortCap;
             SampledSkills = pawn.skills;
 
+            // Not the pawn's own age tracker: that regenerates for every candidate,
+            // while the name only regenerates for candidates that pass the age
+            // check, so reading it live could caption an old name with a newer
+            // candidate's age. The coherent age belongs to the sampled name.
             string shortName = pawn.Name?.ToStringShort;
+            int age = PawnRandomizer.SearchingPawnCoherentAge;
+            if (age < 0)
+                age = pawn.ageTracker.AgeBiologicalYears;
             SampledPortraitLine = string.IsNullOrEmpty(shortName)
                 ? ""
-                : $"{shortName}, {pawn.ageTracker.AgeBiologicalYears}";
+                : $"{shortName}, {age}";
         }
 
         private static void SearchEnded()

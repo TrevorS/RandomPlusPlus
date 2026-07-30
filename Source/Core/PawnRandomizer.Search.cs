@@ -56,9 +56,22 @@ namespace RandomPlus
         public static int SearchingPawnIndex => activeSearch?.PawnIndex ?? -1;
 
         /// <summary>The pawn the active search is currently rerolling, if any. Between
-        /// frames it sits at a candidate boundary, so its name and age are the latest
-        /// candidate's - readable, though not a finished pawn.</summary>
+        /// frames it sits at a candidate boundary - readable, though not a finished
+        /// pawn, and possibly a chimera: see <see cref="SearchingPawnCoherentAge"/>.</summary>
         public static Pawn SearchingPawn => activeSearch?.CurrentPawn;
+
+        /// <summary>
+        /// The biological age belonging to the same candidate as the searching pawn's
+        /// current name and skills, or -1 when no search is running.
+        /// </summary>
+        /// <remarks>
+        /// Age is regenerated for every candidate because it is tested first; the
+        /// name, title and skills are only regenerated for candidates that pass the
+        /// age filter. So between frames the pawn's own age tracker can be one or
+        /// more candidates ahead of its name. The display reads this instead, so a
+        /// sampled "name, age" is always one person.
+        /// </remarks>
+        public static int SearchingPawnCoherentAge => activeSearch?.CoherentAgeYears ?? -1;
 
         /// <summary>
         /// Starts a search for the starting pawn at <paramref name="pawnIndex"/>. One
@@ -240,9 +253,18 @@ namespace RandomPlus
 
             internal int PawnIndex => pawnIndex;
             internal Pawn CurrentPawn => pawn;
+            internal int CoherentAgeYears => coherentAge?.AgeBiologicalYears ?? -1;
 
             // Search state, shared between the iterator and the candidate attempts.
             private Pawn pawn;
+
+            // The age tracker of the last candidate that regenerated its identity
+            // fields - name, title, traits, skills - not merely its age. Candidates
+            // replace the tracker object, so this reference pins the age matching
+            // the pawn's current name even after later candidates fail the age
+            // check and overwrite pawn.ageTracker.
+            private Pawn_AgeTracker coherentAge;
+
             private PawnGenerationRequest request;
             private bool suppressGear;
             private bool canRegenerateInPlace;
@@ -346,6 +368,7 @@ namespace RandomPlus
                     pawnPartlyRegenerated = false;
 
                     pawn = RerollWholePawn(pawn, suppressGear);
+                    coherentAge = pawn.ageTracker;
                     randomRerollCounter++;
 
                     if (CheckPawnIsSatisfied(pawn))
@@ -413,6 +436,7 @@ namespace RandomPlus
                     if (!canRegenerateInPlace || !CheckGenderIsSatisfied(pawn))
                     {
                         pawn = RerollWholePawn(pawn, suppressGear);
+                        coherentAge = pawn.ageTracker;
                         pawnPartlyRegenerated = false;
 
                         // A whole pawn, so take it if it already satisfies everything.
@@ -444,6 +468,10 @@ namespace RandomPlus
 
                     generateTraits?.Invoke(pawn, request);
                     generateSkills?.Invoke(pawn, request);
+
+                    // This candidate now owns every identity field, so its age is the
+                    // one a sampled display should pair with the pawn's name.
+                    coherentAge = pawn.ageTracker;
 
                     if (!CheckSkillsIsSatisfied(pawn) || !CheckTraitsIsSatisfied(pawn))
                         return Candidate.Rejected;
@@ -522,6 +550,7 @@ namespace RandomPlus
                     {
                         Find.WorldPawns.RemoveAndDiscardPawnViaGC(pawn);
                         pawn = RerollWholePawn(pawn, suppressGear);
+                        coherentAge = pawn.ageTracker;
                         pawnPartlyRegenerated = false;
                         return Candidate.Rejected;
                     }

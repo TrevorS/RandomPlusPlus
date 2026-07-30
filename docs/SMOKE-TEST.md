@@ -29,8 +29,8 @@ Start a new colony and stop at **Create characters**.
 
 | # | Check | Why it is here |
 | --- | --- | --- |
-| 1 | A **Filter** button appears next to Randomize | The `DrawCharacterCard` transpiler matched. This is the one that fails silently. |
-| 2 | A **Rerolls: 0/1000** label appears | Same transpiler, second injection. |
+| 1 | A **Filter** button appears left of the Randomize panel, not overlapping its highlight | The `DrawCharacterCard` transpiler matched. This is the one that fails silently. |
+| 2 | With no filter set there is **no Rerolls label**; set any filter and **Rerolls: 0/N** appears and the Filter button turns **green** | The label only means something while a filter is active, and the green button is the there-is-a-filter indicator. Clear the filter and both revert. |
 | 3 | Filter opens the editor, and all three panels draw | `Page_RandomEditor` and the EdB panels. |
 | 4 | **Reset All** and **Save/Load** sit at the top right of the editor | Their positions were wrong at non-default UI scale. Repeat at UI scale 2.0 — this is the point of the check. |
 | 5 | Set a **gender** filter, close, hit Randomize | Must converge to that gender. This was unsatisfiable before. |

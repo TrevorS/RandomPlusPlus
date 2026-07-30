@@ -110,6 +110,37 @@ namespace RandomPlus
             set => filterIncapable = value;
         }
 
+        /// <summary>
+        /// Whether this filter constrains anything at all. The reroll limit is
+        /// deliberately not counted: a limit with nothing to satisfy never rerolls.
+        /// The count-only toggles are not counted either - they only change how the
+        /// passion and skill ranges are tallied, so they do nothing while those
+        /// ranges sit at their defaults, and any range that moved counts by itself.
+        /// </summary>
+        public bool HasActiveFilters
+        {
+            get
+            {
+                foreach (var skill in skills)
+                {
+                    if (skill.Passion != Passion.None || skill.MinValue > 0)
+                        return true;
+                }
+
+                return traits.Count > 0
+                    || _RequiredTraitsInPool != DefaultPoolSize
+                    || passionRange.min != PassionMinDefault
+                    || passionRange.max != PassionMaxDefault
+                    || skillRange.min != SkillMinDefault
+                    || skillRange.max != SkillMaxDefault
+                    || ageRange.min != MinAgeDefault
+                    || ageRange.max != MaxAgeDefault
+                    || gender != Gender.None
+                    || filterHealthCondition != HealthOptions.AllowAll
+                    || filterIncapable != IncapableOptions.AllowAll;
+            }
+        }
+
         public PawnFilter()
         {
             ResetAll();

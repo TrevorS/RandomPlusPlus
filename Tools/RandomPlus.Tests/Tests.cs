@@ -158,6 +158,57 @@ namespace RandomPlus.Tests
                 "excluded trait present is rejected");
         }
 
+        // --------------------------------------------------------- filter activity
+
+        // The card UI shows a filter indicator and the reroll counter only while
+        // HasActiveFilters says so; a wrong answer either hides a live filter or
+        // decorates an idle one.
+        public static void Filter_ReportsWhenAnythingIsActive()
+        {
+            World.Reset();
+            var filter = PawnRandomizer.PawnFilter;
+
+            Assert.True(!filter.HasActiveFilters, "a freshly reset filter filters nothing");
+
+            filter.RerollLimit = 50000;
+            Assert.True(!filter.HasActiveFilters, "the reroll limit alone is not a filter");
+
+            filter.Gender = Gender.Male;
+            Assert.True(filter.HasActiveFilters, "a gender filter counts");
+            filter.ResetAll();
+            Assert.True(!filter.HasActiveFilters, "ResetAll returns to filtering nothing");
+
+            filter.Skills.First(s => s.SkillDef.defName == "Shooting").MinValue = 5;
+            Assert.True(filter.HasActiveFilters, "a per-skill minimum counts");
+            filter.ResetAll();
+
+            filter.Skills.First(s => s.SkillDef.defName == "Melee").Passion = Passion.Minor;
+            Assert.True(filter.HasActiveFilters, "a required passion counts");
+            filter.ResetAll();
+
+            filter.AddTrait(new Trait(World.Trait("Kind")));
+            Assert.True(filter.HasActiveFilters, "a trait filter counts");
+            filter.ResetAll();
+
+            filter.ageRange = new IntRange(18, 25);
+            Assert.True(filter.HasActiveFilters, "an age range counts");
+            filter.ResetAll();
+
+            filter.skillRange = new IntRange(10, PawnFilter.SkillMaxDefault);
+            Assert.True(filter.HasActiveFilters, "a skill total range counts");
+            filter.ResetAll();
+
+            filter.FilterHealthCondition = PawnFilter.HealthOptions.AllowNone;
+            Assert.True(filter.HasActiveFilters, "a health option counts");
+            filter.ResetAll();
+
+            filter.FilterIncapable = PawnFilter.IncapableOptions.NoDumbLabor;
+            Assert.True(filter.HasActiveFilters, "an incapable option counts");
+            filter.ResetAll();
+
+            Assert.True(!filter.HasActiveFilters, "everything reset filters nothing again");
+        }
+
         // -------------------------------------------------------------------- age
 
         public static void Age_RangeBoundaries()

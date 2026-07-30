@@ -121,29 +121,51 @@ namespace RandomPlus
             return codes;
         }
 
+        // Green enough to read as "on" at a glance, pale enough that the button
+        // atlas underneath still looks like a button.
+        private static readonly Color FilterActiveColor = new Color(0.55f, 1f, 0.55f);
+
         public static void InjectCustomUI()
         {
+            if (PawnRandomizer.PawnFilter == null)
+                PawnRandomizer.Init();
+
+            bool filtering = PawnRandomizer.PawnFilter.HasActiveFilters;
+
             // Coordinates here are in RimWorld's own UI units. Prefs.UIScale is applied to
             // the whole GUI matrix before any of this draws, so scaling these by it again
             // would move them off the card.
-            Rect editButtonRect = new Rect(540f, 6f, 50f, 30f);
+            //
+            // The button ends short of x=550: the randomize controls' highlight panel
+            // starts there on the 1.6 creation card, and the old x=540 button sat
+            // half on the panel and half off it.
+            Rect editButtonRect = new Rect(490f, 6f, 50f, 30f);
             if (ModsConfig.IsActive("hahkethomemah.simplepersonalities"))
                 editButtonRect.x -= 130f;
 
-            if (Widgets.ButtonText(editButtonRect, "RandomPlus.FilterButton".Translate(), true, false, true))
+            var savedColor = GUI.color;
+            if (filtering)
+                GUI.color = FilterActiveColor;
+            bool clicked = Widgets.ButtonText(editButtonRect, "RandomPlus.FilterButton".Translate(), true, false, true);
+            GUI.color = savedColor;
+
+            if (clicked)
             {
                 var page = new Page_RandomEditor();
                 Find.WindowStack.Add(page);
             }
+
+            // With no filter set, Randomize is a single vanilla roll and a reroll
+            // count is noise - so the label only exists while a filter does. The
+            // green button is what says a filter is on; this says what it cost.
+            if (!filtering)
+                return;
 
             Rect rerollLabelRect = new Rect(640f, 4f, 200f, 30f);
             if (ModsConfig.IdeologyActive)
                 rerollLabelRect.y += 40f;
             if (ModsConfig.BiotechActive)
                 rerollLabelRect.y += 60f;
-
-            if (PawnRandomizer.PawnFilter == null)
-                PawnRandomizer.Init();
 
             string labelText = "RandomPlus.RerollLabel".Translate() + PawnRandomizer.RandomRerollCounter() + "/" + PawnRandomizer.PawnFilter.RerollLimit;
 

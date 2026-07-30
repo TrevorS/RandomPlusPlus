@@ -18,6 +18,7 @@ var cases = new (string Name, Action Run)[]
     ("trait pool",          Tests.TraitPool_RequiredOnly_PoolNotApplicable),
     ("trait pool",          Tests.TraitPool_OptionalTraits_StillEnforced),
     ("age",                 Tests.Age_RangeBoundaries),
+    ("filter activity",     Tests.Filter_ReportsWhenAnythingIsActive),
     ("reroll search",       Tests.Reroll_ConvergesOnGenderFilter),
     ("reroll search",       Tests.Reroll_RespectsBudgetWhenUnsatisfiable),
     ("search slicing",      Tests.Search_SpansMultiplePumps),
