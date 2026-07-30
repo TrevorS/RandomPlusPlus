@@ -72,6 +72,10 @@ reroll and would flicker through half-generated composites. The rest of the page
 same sample: the pawn's tile in the list and the Team skills summary show the sampled candidate,
 never the per-frame churn.
 
+![A search in flight: the live reroll count, the sampled candidate, and a Stop button — the game keeps drawing the whole time](./docs/search-running.webp)
+
+![Found at 4,668 of 50,000: the pawn has the required trait and passes the health filter, and the green Filter button says a filter is active](./docs/search-result.webp)
+
 The Filter button turns **green** while a filter is active, and the reroll counter next to
 Randomize only appears then — without a filter, randomize is a single vanilla roll and there is
 nothing to count.
