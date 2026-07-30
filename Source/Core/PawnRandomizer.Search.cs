@@ -50,6 +50,12 @@ namespace RandomPlus
         /// <summary>Whether a reroll search is currently running.</summary>
         public static bool SearchInProgress => activeSearch != null;
 
+        /// <summary>Whether the search is generating candidates right now. Display
+        /// substitution must pause while this is true: a pump can run inside the
+        /// page's own draw call - a click on Randomize starts one - and generation
+        /// must never see substituted data.</summary>
+        public static bool Pumping => pumping;
+
         /// <summary>Which starting pawn the active search is rerolling, or -1. The UI
         /// uses this to draw a search panel over that pawn's card instead of the
         /// half-rerolled pawn itself.</summary>

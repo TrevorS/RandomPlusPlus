@@ -17,8 +17,8 @@ namespace RandomPlus
     /// still read the churning pawn, without touching what the search generates.
     ///
     /// The approach is sample-and-hold, display-side only. Nothing here writes to
-    /// a pawn: the name, title and skill getters lie only while vanilla is drawing
-    /// the pawn list or the team skills summary, and the portrait is simply not
+    /// a pawn: the name, title and skill getters lie only while the Create
+    /// characters page is drawing its contents, and the portrait is simply not
     /// re-rendered until the search ends. All of it reads the same 0.12s samples,
     /// so the whole page ticks together at one readable pace. Generation code
     /// always sees the real data, so the search still produces exactly the pawns
@@ -33,11 +33,16 @@ namespace RandomPlus
         private static float nextSampleAt;
         private static Pawn lastPawn;
 
-        /// <summary>True only while vanilla is drawing the pawn list or the team
-        /// skills summary - the sole scope in which the getter patches below may
-        /// substitute sampled data. See <see cref="Patch_CalmPawnListWhileSearching"/>
+        /// <summary>True only while the Create characters page draws its own
+        /// contents - the sole scope in which the getter patches below may
+        /// substitute sampled data. See <see cref="Patch_CalmCreateCharactersPage"/>
         /// for why the scoping is what keeps them safe.</summary>
         internal static bool InSteadyScope;
+
+        /// <summary>The one gate every substitution goes through. Pumping is
+        /// excluded because a click on Randomize starts a pump inside the page's
+        /// own draw call, and generation must always read real data.</summary>
+        internal static bool SubstitutionActive => InSteadyScope && !PawnRandomizer.Pumping;
 
         /// <summary>The searching pawn's name object as of this frame, refreshed on
         /// every pump rather than at the sample cadence. The ToStringShort patches
@@ -108,20 +113,20 @@ namespace RandomPlus
         }
 
         /// <summary>
-        /// Shared body of the ToStringShort patches: serve the sampled name's text
-        /// when the churning name is about to be displayed inside a steady scope.
-        /// True when <paramref name="result"/> was substituted.
+        /// Shared body of the ToStringShort/ToStringFull patches: serve the sampled
+        /// name's text when the churning name is about to be displayed inside the
+        /// steady scope. True when <paramref name="result"/> was substituted.
         /// </summary>
-        internal static bool TrySteadyShortName(Name instance, ref string result)
+        internal static bool TrySteadyNameText(Name instance, bool full, ref string result)
         {
             var sampled = SampledName;
-            if (!InSteadyScope
+            if (!SubstitutionActive
                 || sampled == null
                 || instance == sampled
                 || instance != LiveName)
                 return false;
 
-            result = sampled.ToStringShort;
+            result = full ? sampled.ToStringFull : sampled.ToStringShort;
             return true;
         }
 
@@ -146,18 +151,24 @@ namespace RandomPlus
     }
 
     /// <summary>
-    /// Marks when vanilla is drawing the pawn list, one of the two scopes in
-    /// which the getters below are allowed to lie.
+    /// Marks when the Create characters page is drawing its own contents - the
+    /// steady scope, in which the getters below may serve sampled data.
     /// </summary>
     /// <remarks>
-    /// The scope is what makes the substitution safe. An unscoped patch on
-    /// Pawn.Name would feed sampled names to generation itself - the bio and name
+    /// The scope is what makes the substitution safe. An unscoped patch on a name
+    /// getter would feed sampled names to generation itself - the bio and name
     /// generator reads existing pawns' names to avoid collisions - and change
-    /// which names the search can produce. Inside DrawPawnList nothing generates;
-    /// it only draws.
+    /// which names the search can produce. The page's draw call only draws, with
+    /// one exception: a click on Randomize pumps the search from inside it, which
+    /// is why <see cref="SearchSample.SubstitutionActive"/> also excludes pumping.
+    ///
+    /// The whole page rather than its pawn-list and team-skills parts: the page
+    /// reads the searching pawn's name through more surfaces than can be safely
+    /// enumerated from reference assemblies, and every one of them should tick
+    /// with the sample.
     /// </remarks>
-    [HarmonyPatch(typeof(Page_ConfigureStartingPawns), "DrawPawnList")]
-    static class Patch_CalmPawnListWhileSearching
+    [HarmonyPatch(typeof(Page_ConfigureStartingPawns), "DoWindowContents")]
+    static class Patch_CalmCreateCharactersPage
     {
         [HarmonyPrefix]
         static void Prefix()
@@ -165,29 +176,8 @@ namespace RandomPlus
             SearchSample.InSteadyScope = PawnRandomizer.SearchInProgress;
         }
 
-        // A finalizer rather than a postfix: the flag has to clear even when
-        // DrawPawnList throws, or the getters would keep lying page-wide.
-        [HarmonyFinalizer]
-        static void Finalizer()
-        {
-            SearchSample.InSteadyScope = false;
-        }
-    }
-
-    /// <summary>
-    /// The second steady scope: the team skills summary. Inside it, the skill
-    /// getter below serves the sampled candidate's tracker, so the panel ticks
-    /// along with the tile and the overlay instead of churning per frame.
-    /// </summary>
-    [HarmonyPatch(typeof(StartingPawnUtility), "DrawSkillSummaries")]
-    static class Patch_CalmTeamSkillsWhileSearching
-    {
-        [HarmonyPrefix]
-        static void Prefix()
-        {
-            SearchSample.InSteadyScope = PawnRandomizer.SearchInProgress;
-        }
-
+        // A finalizer rather than a postfix: the flag has to clear even when the
+        // draw throws, or the getters would keep lying beyond the page.
         [HarmonyFinalizer]
         static void Finalizer()
         {
@@ -201,7 +191,7 @@ namespace RandomPlus
         [HarmonyPrefix]
         static bool Prefix(Pawn __instance, ref Name __result)
         {
-            if (!SearchSample.InSteadyScope
+            if (!SearchSample.SubstitutionActive
                 || SearchSample.SampledName == null
                 || __instance != PawnRandomizer.SearchingPawn)
                 return true;
@@ -219,7 +209,7 @@ namespace RandomPlus
         [HarmonyPrefix]
         static bool Prefix(Pawn __instance, ref string __result)
         {
-            if (!SearchSample.InSteadyScope
+            if (!SearchSample.SubstitutionActive
                 || SearchSample.SampledLabelShort == null
                 || __instance != PawnRandomizer.SearchingPawn)
                 return true;
@@ -237,7 +227,7 @@ namespace RandomPlus
         [HarmonyPrefix]
         static bool Prefix(Pawn ___pawn, ref string __result)
         {
-            if (!SearchSample.InSteadyScope
+            if (!SearchSample.SubstitutionActive
                 || SearchSample.SampledTitleCap == null
                 || ___pawn != PawnRandomizer.SearchingPawn)
                 return true;
@@ -253,7 +243,7 @@ namespace RandomPlus
         [HarmonyPrefix]
         static bool Prefix(Pawn ___pawn, ref string __result)
         {
-            if (!SearchSample.InSteadyScope
+            if (!SearchSample.SubstitutionActive
                 || SearchSample.SampledTitleShortCap == null
                 || ___pawn != PawnRandomizer.SearchingPawn)
                 return true;
@@ -278,7 +268,7 @@ namespace RandomPlus
         [HarmonyPrefix]
         static bool Prefix(NameTriple __instance, ref string __result)
         {
-            return !SearchSample.TrySteadyShortName(__instance, ref __result);
+            return !SearchSample.TrySteadyNameText(__instance, false, ref __result);
         }
     }
 
@@ -288,7 +278,29 @@ namespace RandomPlus
         [HarmonyPrefix]
         static bool Prefix(NameSingle __instance, ref string __result)
         {
-            return !SearchSample.TrySteadyShortName(__instance, ref __result);
+            return !SearchSample.TrySteadyNameText(__instance, false, ref __result);
+        }
+    }
+
+    // ToStringFull as well: LabelCap and the colored-name properties end in it,
+    // so without this a surface using the full name would keep churning.
+    [HarmonyPatch(typeof(NameTriple), nameof(NameTriple.ToStringFull), MethodType.Getter)]
+    static class Patch_SteadyNameTripleFullText
+    {
+        [HarmonyPrefix]
+        static bool Prefix(NameTriple __instance, ref string __result)
+        {
+            return !SearchSample.TrySteadyNameText(__instance, true, ref __result);
+        }
+    }
+
+    [HarmonyPatch(typeof(NameSingle), nameof(NameSingle.ToStringFull), MethodType.Getter)]
+    static class Patch_SteadyNameSingleFullText
+    {
+        [HarmonyPrefix]
+        static bool Prefix(NameSingle __instance, ref string __result)
+        {
+            return !SearchSample.TrySteadyNameText(__instance, true, ref __result);
         }
     }
 
@@ -334,7 +346,7 @@ namespace RandomPlus
         static bool Prefix(Pawn_SkillTracker __instance, Pawn ___pawn, SkillDef skillDef, ref SkillRecord __result)
         {
             var sampled = SearchSample.SampledSkills;
-            if (!SearchSample.InSteadyScope
+            if (!SearchSample.SubstitutionActive
                 || sampled == null
                 || __instance == sampled
                 || ___pawn != PawnRandomizer.SearchingPawn)
