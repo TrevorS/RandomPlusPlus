@@ -136,10 +136,11 @@ namespace RandomPlus
             // the whole GUI matrix before any of this draws, so scaling these by it again
             // would move them off the card.
             //
-            // The button ends short of x=550: the randomize controls' highlight panel
-            // starts there on the 1.6 creation card, and the old x=540 button sat
-            // half on the panel and half off it.
-            Rect editButtonRect = new Rect(490f, 6f, 50f, 30f);
+            // x lines the button up with the Health column header below it, so it
+            // reads as part of that column rather than floating on its own. The
+            // width keeps its right edge short of the randomize controls' highlight
+            // panel, which the original x=540 button sat halfway onto.
+            Rect editButtonRect = new Rect(500f, 6f, 45f, 30f);
             if (ModsConfig.IsActive("hahkethomemah.simplepersonalities"))
                 editButtonRect.x -= 130f;
 

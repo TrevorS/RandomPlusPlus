@@ -39,6 +39,13 @@ namespace RandomPlus
         /// for why the scoping is what keeps them safe.</summary>
         internal static bool InSteadyScope;
 
+        /// <summary>The searching pawn's name object as of this frame, refreshed on
+        /// every pump rather than at the sample cadence. The ToStringShort patches
+        /// compare against this to recognise the churning name wherever it surfaces,
+        /// because candidates replace the object and a stale reference would miss
+        /// it.</summary>
+        internal static Name LiveName { get; private set; }
+
         internal static Name SampledName { get; private set; }
         internal static string SampledLabelShort { get; private set; }
         internal static string SampledTitleCap { get; private set; }
@@ -73,6 +80,7 @@ namespace RandomPlus
                 return;
 
             lastPawn = pawn;
+            LiveName = pawn.Name;
             if (SampledName != null && Time.realtimeSinceStartup < nextSampleAt)
                 return;
 
@@ -99,9 +107,28 @@ namespace RandomPlus
                 : $"{shortName}, {age}";
         }
 
+        /// <summary>
+        /// Shared body of the ToStringShort patches: serve the sampled name's text
+        /// when the churning name is about to be displayed inside a steady scope.
+        /// True when <paramref name="result"/> was substituted.
+        /// </summary>
+        internal static bool TrySteadyShortName(Name instance, ref string result)
+        {
+            var sampled = SampledName;
+            if (!InSteadyScope
+                || sampled == null
+                || instance == sampled
+                || instance != LiveName)
+                return false;
+
+            result = sampled.ToStringShort;
+            return true;
+        }
+
         private static void SearchEnded()
         {
             SampledName = null;
+            LiveName = null;
             SampledLabelShort = null;
             SampledTitleCap = null;
             SampledTitleShortCap = null;
@@ -233,6 +260,35 @@ namespace RandomPlus
 
             __result = SearchSample.SampledTitleShortCap;
             return false;
+        }
+    }
+
+    /// <summary>
+    /// The name interception that cannot be bypassed. Mono's JIT inlines Pawn's
+    /// trivial Name getter into some of its callers, and an inlined call never
+    /// reaches the patch on that getter - which is why the pawn list tile's name
+    /// kept churning while its title, whose getter is too big to inline, sampled
+    /// correctly. Every path that turns a Name into text ends at this virtual
+    /// property, and virtual calls are dispatched through the object, never
+    /// inlined - so patching the overrides catches whatever the tile reads.
+    /// </summary>
+    [HarmonyPatch(typeof(NameTriple), nameof(NameTriple.ToStringShort), MethodType.Getter)]
+    static class Patch_SteadyNameTripleText
+    {
+        [HarmonyPrefix]
+        static bool Prefix(NameTriple __instance, ref string __result)
+        {
+            return !SearchSample.TrySteadyShortName(__instance, ref __result);
+        }
+    }
+
+    [HarmonyPatch(typeof(NameSingle), nameof(NameSingle.ToStringShort), MethodType.Getter)]
+    static class Patch_SteadyNameSingleText
+    {
+        [HarmonyPrefix]
+        static bool Prefix(NameSingle __instance, ref string __result)
+        {
+            return !SearchSample.TrySteadyShortName(__instance, ref __result);
         }
     }
 
