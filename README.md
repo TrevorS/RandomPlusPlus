@@ -1,5 +1,7 @@
 # RandomPlusPlus
 
+[![Build](https://github.com/TrevorS/RandomPlusPlus/actions/workflows/build.yml/badge.svg)](https://github.com/TrevorS/RandomPlusPlus/actions/workflows/build.yml)
+
 Set a specification for your starting colonists, then hit randomize. It keeps rerolling until a pawn
 matches, or until it reaches your reroll limit.
 
@@ -64,8 +66,15 @@ pawn and stops. Slices fall only between candidates, on the same thread, in the 
 slicing changes when the work happens, never what is generated.
 
 While it runs, the pawn's card shows a search panel — live reroll count, candidate names sampled at
-a readable pace — rather than the pawn itself, which mid-search is always part-way through a reroll
-and would flicker through half-generated composites.
+a readable pace, and a **Stop searching** button that ends the search early and keeps the pawn it
+was on, fully finished — rather than the pawn itself, which mid-search is always part-way through a
+reroll and would flicker through half-generated composites. The rest of the page ticks with the
+same sample: the pawn's tile in the list and the Team skills summary show the sampled candidate,
+never the per-frame churn.
+
+The Filter button turns **green** while a filter is active, and the reroll counter next to
+Randomize only appears then — without a filter, randomize is a single vanilla roll and there is
+nothing to count.
 
 ## Development
 
@@ -86,7 +95,9 @@ tooling around it. macOS has a BSD userland rather than GNU, and `/bin/bash` the
 breakages have already come from that gap, so the macOS leg additionally re-runs the scripts under
 `/bin/bash` explicitly, since the runner puts a newer bash ahead of it on `PATH`. Both legs install
 into a RimWorld tree and uninstall again, which is the only thing that exercises the macOS Mods
-folder living inside `RimWorldMac.app` behind a path with spaces in it.
+folder living inside `RimWorldMac.app` behind a path with spaces in it. A third, dotnet-only leg
+builds, verifies and tests on Windows — the platform most contributors are likely to be on — where
+the bash-and-make tooling doesn't apply; packaging stays on Linux and macOS.
 
 `make install` copies the built mod into RimWorld's `Mods` folder — Steam and GOG locations are
 found automatically on macOS and Linux, including the macOS one inside `RimWorldMac.app`, or set

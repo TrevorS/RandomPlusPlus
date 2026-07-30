@@ -41,6 +41,8 @@ The original RandomPlus by mastertea still works, and this fork owes it everythi
 
 Beyond those, the search itself was rewritten: a rejected pawn now regenerates only the parts a filter actually reads instead of a whole pawn, and the mod asks Harmony which other mods have patched pawn generation rather than checking for one by name, so it takes the safe path automatically when it needs to.
 
+The search also no longer freezes the game. It runs across frames, the card shows a live reroll counter and the candidates ticking past at a readable pace, and a Stop button ends it early - keeping the pawn it was on, fully finished. The Filter button turns green while a filter is active, so you always know whether randomize will search or just roll once.
+
 Supports RimWorld 1.6 and 1.5, both built from the same source, so the fixes above apply to both. If you are on 1.4 or earlier, use the original mod instead.
 
 Original mod: https://steamcommunity.com/sharedfiles/filedetails/?id=1434137894

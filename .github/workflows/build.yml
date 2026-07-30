@@ -162,3 +162,43 @@ jobs:
           name: RandomPlusPlus-mod
           path: dist/*.zip
           if-no-files-found: error
+
+  # A dotnet-only leg. The shipped assembly is byte-identical from any OS, so
+  # this exists for contributors building on Windows, where the make-and-bash
+  # tooling above is unavailable (Git Bash on the runners has neither zip nor
+  # unzip, so packaging stays on Linux and macOS). It mirrors Tools/build.sh
+  # without it: build every version, check each compiled against its own
+  # reference assemblies, verify each, run the tests.
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Build and verify every supported RimWorld version
+        shell: pwsh
+        run: |
+          $versions = '1.6', '1.5'
+          foreach ($v in $versions) {
+            Write-Host "==> RimWorld ${v}: build"
+            dotnet build -c Release "-p:RimWorldVersion=$v"
+            if ($LASTEXITCODE -ne 0) { exit 1 }
+            # Either path separator: the manifest records real paths, which use
+            # backslashes here and slashes everywhere else.
+            if (-not (Select-String -Quiet -Pattern "krafs\.rimworld\.ref[/\\]$v\." -Path "obj/$v/references.txt")) {
+              Write-Error "the $v build did not reference Krafs.Rimworld.Ref $v - check obj/$v/references.txt"
+              exit 1
+            }
+          }
+          foreach ($v in $versions) {
+            Write-Host "==> RimWorld ${v}: verify"
+            dotnet run --project Tools/RandomPlus.Verify -c Release -- "obj/$v/references.txt" "Resources/$v/Assemblies/RandomPlusPlus.dll"
+            if ($LASTEXITCODE -ne 0) { exit 1 }
+          }
+
+      - name: Test filter and reroll logic
+        run: dotnet run --project Tools/RandomPlus.Tests -c Release
