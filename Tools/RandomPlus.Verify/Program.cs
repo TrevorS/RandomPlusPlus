@@ -81,8 +81,23 @@ foreach (var t in mod.GetTypes())
     {
         if (attr.AttributeType.Name != "HarmonyPatch") continue;
         var ctorArgs = attr.ConstructorArguments;
-        if (ctorArgs.Count != 2) continue;
+        if (ctorArgs.Count is not (2 or 3)) continue;
         if (ctorArgs[0].Value is not Type target || ctorArgs[1].Value is not string member) continue;
+
+        // (Type, string, MethodType) targets a property accessor: the member is a
+        // property name, and what has to exist is the getter or setter itself.
+        if (ctorArgs.Count == 3)
+        {
+            if (ctorArgs[2].ArgumentType.Name != "MethodType" || ctorArgs[2].Value is not int methodType) continue;
+            var accessorKind = methodType switch { 1 => "getter", 2 => "setter", _ => null };
+            if (accessorKind is null) continue;
+
+            var prop = target.GetProperty(member, ALL);
+            var accessor = methodType == 1 ? prop?.GetMethod : prop?.SetMethod;
+            if (accessor is not null) Ok($"{t.Name}: {target.FullName}.{member} ({accessorKind})");
+            else Bad($"{t.Name}: {target.FullName}.{member} {accessorKind} DOES NOT EXIST");
+            continue;
+        }
 
         var found = target.GetMember(member, ALL);
         if (found.Length > 0) Ok($"{t.Name}: {target.FullName}.{member} ({found.Length} overload(s))");

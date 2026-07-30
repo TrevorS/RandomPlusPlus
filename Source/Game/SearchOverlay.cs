@@ -25,31 +25,11 @@ namespace RandomPlus
     [HarmonyPatch(typeof(StartingPawnUtility), "DrawPortraitArea")]
     static class Patch_SearchOverlay
     {
-        // Slot machines read at about this pace; candidate churn is far faster.
-        private const float SamplePeriodSeconds = 0.12f;
-
-        private static string sampledCandidate = "";
-        private static float nextSampleAt;
-
         [HarmonyPrefix]
         static bool Prefix(Rect rect, int pawnIndex)
         {
             if (!PawnRandomizer.SearchInProgress || pawnIndex != PawnRandomizer.SearchingPawnIndex)
-            {
-                sampledCandidate = "";
-                nextSampleAt = 0f;
                 return true;
-            }
-
-            if (Time.realtimeSinceStartup >= nextSampleAt)
-            {
-                nextSampleAt = Time.realtimeSinceStartup + SamplePeriodSeconds;
-                var pawn = PawnRandomizer.SearchingPawn;
-                string name = pawn?.Name?.ToStringShort;
-                sampledCandidate = string.IsNullOrEmpty(name)
-                    ? ""
-                    : $"{name}, {pawn.ageTracker.AgeBiologicalYears}";
-            }
 
             Widgets.DrawMenuSection(rect);
 
@@ -65,11 +45,14 @@ namespace RandomPlus
                 $"{PawnRandomizer.RandomRerollCounter():N0} / {PawnRandomizer.PawnFilter.RerollLimit:N0}");
 
             Text.Font = GameFont.Small;
-            Widgets.Label(Band(rect, 0.54f), sampledCandidate);
+            Widgets.Label(Band(rect, 0.54f), SearchSample.SampledPortraitLine);
 
-            GUI.color = new Color(1f, 1f, 1f, 0.55f);
-            Widgets.Label(Band(rect, 0.66f), "RandomPlus.SearchOverlay.Hint".Translate());
-            GUI.color = Color.white;
+            // Stopping keeps the candidate the search is on: AbortSearch finishes
+            // that pawn - gear, work priorities - exactly as if the limit ran out.
+            var stopArea = Band(rect, 0.66f);
+            var stopButton = new Rect(stopArea.x + ((stopArea.width - 160f) / 2f), stopArea.y, 160f, stopArea.height);
+            if (Widgets.ButtonText(stopButton, "RandomPlus.SearchOverlay.StopButton".Translate()))
+                PawnRandomizer.AbortSearch();
 
             Text.Anchor = previousAnchor;
             Text.Font = previousFont;

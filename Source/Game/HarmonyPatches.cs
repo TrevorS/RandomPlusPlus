@@ -54,6 +54,7 @@ namespace RandomPlus
 
             PawnRandomizer.BeginReroll(pawnIndex);
             PawnRandomizer.PumpSearch(SearchBudgetMillis);
+            SearchSample.AfterPump();
 
             // Vanilla notifies after its single roll. Ours may still be running, but
             // the tutor event only records that the action was used, which is true
@@ -79,8 +80,15 @@ namespace RandomPlus
             // OnGUI runs several times per frame - layout, repaint, one call per
             // input event. Repaint happens exactly once, so gating on it pumps the
             // search once per frame.
-            if (PawnRandomizer.SearchInProgress && Event.current.type == EventType.Repaint)
+            if (Event.current.type != EventType.Repaint)
+                return;
+
+            if (PawnRandomizer.SearchInProgress)
                 PawnRandomizer.PumpSearch(Patch_RandomizeMethod.SearchBudgetMillis);
+
+            // Unconditional: this is also what settles the display after the search
+            // ends, however it ends - completion, the stop button, a closed window.
+            SearchSample.AfterPump();
         }
     }
 
