@@ -3,7 +3,7 @@
 Set a specification for your starting colonists, then hit randomize. It keeps rerolling until a pawn
 matches, or until it reaches your reroll limit.
 
-![RandomPlusPlus](./docs/screenshot.png)
+![The Random Editor open over the Create characters page, with a 50,000-reroll search running behind it](./docs/random-editor.webp)
 
 Filter on skill levels and passions, total skill points, traits (required, excluded, or "any N of
 these"), age, gender, health conditions and work capability.
