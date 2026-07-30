@@ -572,6 +572,14 @@ namespace RandomPlus
             {
                 try
                 {
+                    // The last candidate may have died at the age check, leaving its
+                    // failing age glued onto an earlier candidate's identity - and an
+                    // age the player's own filter rejects. The coherent tracker is
+                    // the one belonging to the identity the pawn actually wears.
+                    // Restored before redressing, so the gear fits that age too.
+                    if (coherentAge != null)
+                        pawn.ageTracker = coherentAge;
+
                     PawnGenerator.RedressPawn(pawn, request);
                     gearGenerationPending = false;
                     pawn.workSettings?.EnableAndInitialize();

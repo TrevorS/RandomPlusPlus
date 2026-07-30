@@ -42,7 +42,13 @@ namespace RandomPlus
                 case LoadSaveMode.LoadingVars:
                     Scribe_Values.Look(ref traitDefName, "traitDef", null, false);
                     Scribe_Values.Look(ref traitDegree, "traitDegree", 0, false);
-                    trait = new Trait(DefDatabase<TraitDef>.GetNamed(traitDefName), traitDegree, true);
+                    // SilentFail: the trait's mod may have been removed since the
+                    // preset was saved. The container is left without a trait and
+                    // PawnFilter's post-load scrub drops it, instead of a null-def
+                    // Trait that crashes the panel and can never match a pawn.
+                    var traitDef = DefDatabase<TraitDef>.GetNamedSilentFail(traitDefName);
+                    if (traitDef != null)
+                        trait = new Trait(traitDef, traitDegree, true);
                     break;
             }
 

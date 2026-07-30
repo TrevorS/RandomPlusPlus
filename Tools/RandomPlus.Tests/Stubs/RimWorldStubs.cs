@@ -65,6 +65,7 @@ namespace Verse
         public static IEnumerable<T> AllDefs => defs;
         public static List<T> AllDefsListForReading => defs;
         public static T GetNamed(string name) => defs.First(d => d.defName == name);
+        public static T GetNamedSilentFail(string name) => defs.FirstOrDefault(d => d.defName == name);
         public static void Clear() => defs.Clear();
         public static void Add(T def) => defs.Add(def);
     }

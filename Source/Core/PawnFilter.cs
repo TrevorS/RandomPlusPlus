@@ -208,6 +208,25 @@ namespace RandomPlus
             Scribe_Values.Look(ref gender, "gender", Gender.None);
             Scribe_Values.Look(ref filterHealthCondition, "healthCondition", HealthOptions.AllowAll);
             Scribe_Values.Look(ref filterIncapable, "incapable", IncapableOptions.AllowAll);
+
+            // A hand-edited or truncated preset can load with a list node missing -
+            // Scribe leaves the list null - or with entries whose defs left along
+            // with a removed mod. Neither may reach the UI: a null list crashes the
+            // card's filter-active check every frame, and a null-def trait matches
+            // no pawn ever, so a Required one would burn the whole reroll budget
+            // with no explanation.
+            if (Scribe.mode == LoadSaveMode.LoadingVars)
+            {
+                if (skills == null)
+                    skills = new List<SkillContainer>();
+                if (traits == null)
+                    traits = new List<TraitContainer>();
+
+                skills.RemoveAll(s => s == null || s.SkillDef == null);
+                int dropped = traits.RemoveAll(t => t == null || t.trait?.def == null);
+                if (dropped > 0)
+                    ModLog.Warning($"Dropped {dropped} saved trait filter(s) whose trait no longer exists - a mod was removed?");
+            }
         }
     }
 }

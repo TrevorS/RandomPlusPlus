@@ -186,7 +186,7 @@ namespace RandomPlus
     }
 
     [HarmonyPatch(typeof(Pawn), nameof(Pawn.Name), MethodType.Getter)]
-    static class Patch_SteadyNameInPawnList
+    static class Patch_SteadyName
     {
         [HarmonyPrefix]
         static bool Prefix(Pawn __instance, ref Name __result)
@@ -204,7 +204,7 @@ namespace RandomPlus
     // LabelShort as well as Name: the tile may read either, and LabelShort reads
     // the pawn's name field directly rather than through the patched getter.
     [HarmonyPatch(typeof(Pawn), nameof(Pawn.LabelShort), MethodType.Getter)]
-    static class Patch_SteadyLabelInPawnList
+    static class Patch_SteadyLabelShort
     {
         [HarmonyPrefix]
         static bool Prefix(Pawn __instance, ref string __result)
@@ -222,7 +222,7 @@ namespace RandomPlus
     // ___pawn is Harmony field injection: the tracker's backing pawn field is
     // private, and this is the sanctioned way to read it from a prefix.
     [HarmonyPatch(typeof(Pawn_StoryTracker), "TitleCap", MethodType.Getter)]
-    static class Patch_SteadyTitleInPawnList
+    static class Patch_SteadyTitle
     {
         [HarmonyPrefix]
         static bool Prefix(Pawn ___pawn, ref string __result)
@@ -238,7 +238,7 @@ namespace RandomPlus
     }
 
     [HarmonyPatch(typeof(Pawn_StoryTracker), "TitleShortCap", MethodType.Getter)]
-    static class Patch_SteadyShortTitleInPawnList
+    static class Patch_SteadyShortTitle
     {
         [HarmonyPrefix]
         static bool Prefix(Pawn ___pawn, ref string __result)

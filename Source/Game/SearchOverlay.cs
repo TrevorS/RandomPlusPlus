@@ -52,7 +52,16 @@ namespace RandomPlus
             var stopArea = Band(rect, 0.66f);
             var stopButton = new Rect(stopArea.x + ((stopArea.width - 160f) / 2f), stopArea.y, 160f, stopArea.height);
             if (Widgets.ButtonText(stopButton, "RandomPlus.SearchOverlay.StopButton".Translate()))
+            {
+                // Finishing the stopped pawn generates gear, and generation must
+                // never read sampled data - this click happens inside the page's
+                // draw, where the steady scope is open, so close it first. Then
+                // settle the display at once instead of waiting for the next pump,
+                // or the card would show the sampled name for one more frame.
+                SearchSample.InSteadyScope = false;
                 PawnRandomizer.AbortSearch();
+                SearchSample.AfterPump();
+            }
 
             Text.Anchor = previousAnchor;
             Text.Font = previousFont;
